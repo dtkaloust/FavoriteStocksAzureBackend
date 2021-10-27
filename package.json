@@ -1,0 +1,22 @@
+{
+  "name": "favorite-stock-tickers",
+  "version": "",
+  "description": "",
+  "scripts": {
+    "test": "echo \"No tests yet...\"",
+    "start": "func start"
+  },
+  "author": "",
+  "dependencies": {
+    "apollo-server-azure-functions": "^3.4.0",
+    "dotenv": "^10.0.0",
+    "graphql": "^15.6.1",
+    "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^2.0.5",
+    "node-fetch": "^3.0.0",
+    "pg": "^8.7.1"
+  },
+  "devDependencies": {
+    "prettier": "^2.4.1"
+  }
+}
