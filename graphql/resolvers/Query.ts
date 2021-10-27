@@ -1,8 +1,13 @@
 require("dotenv").config();
-const { queryDatabase } = require("../utils/database");
-const { getOrCreateUser } = require("../utils/userLogic");
-const fetchP = import("node-fetch").then((mod) => mod.default);
-const fetch = (...args) => fetchP.then((fn) => fn(...args));
+import { queryDatabase } from "../utils/database";
+import { getOrCreateUser } from "../utils/userLogic";
+import {
+  finhubQuoteAPIResponse,
+  finhubSymbolAPIResponse,
+} from "../TypeScriptInterfaces";
+import fetch from "node-fetch";
+
+const apiKey = process.env.API_KEY;
 
 //function 1: retrieves the home page tickers
 const getHomePageTickers = async () => {
@@ -11,7 +16,7 @@ const getHomePageTickers = async () => {
     TICKER_NAME TN join FEED_TICKERS FT ON (TN.TICKER_ID = FT.TICKER_ID)
     GROUP BY TN.TICKER_ID, SYMBOL, COUNTRY, CURRENCY, LOGO, MARKET_CAP, NAME, URL)
     SELECT ID, SYMBOL, COUNTRY, CURRENCY, LOGO, MARKET_CAP, NAME, URL FROM T1 ORDER BY TOTAL_COUNT DESC;`;
-  const tickers = await queryDatabase(readHomePageTickers);
+  const tickers = await queryDatabase(readHomePageTickers, []);
   return tickers;
 };
 
@@ -26,8 +31,8 @@ const getCurrentFeedTickers = async (feedName) => {
 };
 
 //graphql query 1: retrieves a list of all possible tickers. Used for predictive search in the front end
-async function getPossibleTickers(parent, args, context, info) {
-  const apiToken = process.env.API_KEY;
+export async function getPossibleTickers(parent, args, context, info) {
+  const apiToken = apiKey;
   if (!context.auth.sub) {
     return ["nothing"];
   }
@@ -36,7 +41,7 @@ async function getPossibleTickers(parent, args, context, info) {
     `https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${apiToken}`
   );
 
-  const json = await response.json();
+  const json = (await response.json()) as finhubSymbolAPIResponse[];
   const symbolList = json.map((ticker) => {
     return ticker.symbol;
   });
@@ -44,17 +49,17 @@ async function getPossibleTickers(parent, args, context, info) {
 }
 
 //graphql query 2: retrieves current price details of a symbol
-async function priceCheck(parent, args, context, info) {
-  const apiToken = process.env.API_KEY;
+export async function priceCheck(parent, args, context, info) {
+  const apiToken = apiKey;
   const response = await fetch(
     `https://finnhub.io/api/v1/quote?symbol=${args.tickerSymbol}&token=${apiToken}`
   );
-  const json = await response.json();
+  const json = (await response.json()) as finhubQuoteAPIResponse;
   return json.c;
 }
 
 //graphql query 3: retrieves a specific feed
-async function feed(parent, args, context, info) {
+export async function feed(parent, args, context, info) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -78,9 +83,3 @@ async function feed(parent, args, context, info) {
     };
   }
 }
-
-module.exports = {
-  getPossibleTickers,
-  priceCheck,
-  feed,
-};

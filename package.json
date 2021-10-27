@@ -2,21 +2,29 @@
   "name": "favorite-stock-tickers",
   "version": "",
   "description": "",
+  "main": "index.js",
+  "keywords": [],
   "scripts": {
-    "test": "echo \"No tests yet...\"",
+    "build": "tsc",
+    "watch": "tsc --w",
+    "prestart": "npm run build",
     "start": "func start"
   },
   "author": "",
   "dependencies": {
-    "apollo-server-azure-functions": "^3.4.0",
+    "apollo-server-azure-functions": "^2.20.0",
     "dotenv": "^10.0.0",
-    "graphql": "^15.6.1",
+    "graphql": "^15.5.1",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^2.0.5",
-    "node-fetch": "^3.0.0",
+    "node-fetch": "^2.6.2",
     "pg": "^8.7.1"
   },
   "devDependencies": {
-    "prettier": "^2.4.1"
+    "@azure/functions": "^1.2.3",
+    "azure-functions-core-tools": "^3.0.3233",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.4.1",
+    "typescript": "^4.1.4"
   }
 }

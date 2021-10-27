@@ -1,6 +1,5 @@
 *.js.map
 *.ts
-*.js
 .git*
 .vscode
 local.settings.json

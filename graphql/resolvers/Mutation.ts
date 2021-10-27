@@ -1,8 +1,11 @@
-const { getOrCreateUser } = require("../utils/userLogic");
-const { queryDatabase } = require("../utils/database");
+import { getOrCreateUser } from "../utils/userLogic";
+import { queryDatabase } from "../utils/database";
+import { AuthenticationError } from "apollo-server-azure-functions";
+import { finhubProfileAPIResponse } from "../TypeScriptInterfaces";
+require("dotenv").config();
+import fetch from "node-fetch";
+
 const apiToken = process.env.API_KEY;
-const fetchP = import("node-fetch").then((mod) => mod.default);
-const fetch = (...args) => fetchP.then((fn) => fn(...args));
 
 //function 1: for fetching additional data about a company
 const loadCompanyData = async (symbol) => {
@@ -10,6 +13,7 @@ const loadCompanyData = async (symbol) => {
     `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${apiToken}`
   );
   const json = await response.json();
+  console.log(json);
   return json;
 };
 
@@ -22,13 +26,14 @@ const createOrGetTicker = async (symbol) => {
 
   if (!ticker[0]) {
     const companyData = loadCompanyData(symbol);
-    return companyData.then(async (res) => {
+    return companyData.then(async (res: finhubProfileAPIResponse) => {
+      console.log(res);
       const newTicker = await queryDatabase(insertTickerQuery, [
         res.ticker,
         res.country,
         res.currency,
         res.logo,
-        String(res.marketCapitalization),
+        res.marketCapitalization,
         res.name,
         res.weburl,
       ]);
@@ -69,7 +74,7 @@ const deleteTickerFeedRel = async (feed_id, ticker_id) => {
 };
 
 //graphql mutation 1: Will add a ticker to a specific feed of a specific user
-async function addTickerToFeed(parent, args, context, info) {
+export async function addTickerToFeed(parent, args, context, info) {
   //check if authenticated
   if (!context.auth.isAuthenticated) {
     throw new AuthenticationError("Not logged in");
@@ -94,14 +99,14 @@ async function addTickerToFeed(parent, args, context, info) {
     country: ticker.country,
     currency: ticker.currency,
     logo: ticker.logo,
-    marketCap: ticker.market_cap,
+    market_cap: ticker.market_cap,
     name: ticker.name,
     url: ticker.url,
   };
 }
 
 //graphql mutation 2: Will remove a ticker from a specific feed of a specific user
-async function removeTickerFromFeed(parent, args, context, info) {
+export async function removeTickerFromFeed(parent, args, context, info) {
   //check if authenticated
   if (!context.auth.isAuthenticated) {
     throw new AuthenticationError("Not logged in");
@@ -126,13 +131,8 @@ async function removeTickerFromFeed(parent, args, context, info) {
     country: ticker.country,
     currency: ticker.currency,
     logo: ticker.logo,
-    marketCap: ticker.market_cap,
+    market_cap: ticker.market_cap,
     name: ticker.name,
     url: ticker.url,
   };
 }
-
-module.exports = {
-  addTickerToFeed,
-  removeTickerFromFeed,
-};

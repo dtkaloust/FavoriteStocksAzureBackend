@@ -1,6 +1,6 @@
-const { queryDatabase } = require("./database");
+import { queryDatabase } from "./database";
 
-async function getOrCreateUser(auth_sub) {
+export async function getOrCreateUser(auth_sub) {
   //get unique identifier
   const uniqueId = auth_sub.split("|")[1];
 
@@ -19,5 +19,3 @@ async function getOrCreateUser(auth_sub) {
     return user[0];
   }
 }
-
-module.exports = { getOrCreateUser };
