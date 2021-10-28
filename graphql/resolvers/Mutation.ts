@@ -29,7 +29,7 @@ const createOrGetTicker = async (symbol) => {
     return companyData.then(async (res: finhubProfileAPIResponse) => {
       console.log(res);
       const newTicker = await queryDatabase(insertTickerQuery, [
-        res.ticker,
+        symbol,
         res.country,
         res.currency,
         res.logo,
@@ -135,4 +135,57 @@ export async function removeTickerFromFeed(parent, args, context, info) {
     name: ticker.name,
     url: ticker.url,
   };
+}
+
+//graphql mutation 3: add a new private feed
+export async function addNewPrivateFeedName(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+
+  const insertFeedName = `INSERT INTO FEED_NAME (FEED_NAME, CREATOR_ID, IS_PUBLIC) VALUES ($1, $2, FALSE) RETURNING *`;
+  const insertUserFeed = `INSERT INTO USER_FEEDS (FEED_ID, USER_ID) VALUES ($1, $2)`;
+  const newFeed = await queryDatabase(insertFeedName, [
+    args.feedName,
+    user.user_id,
+  ]);
+  await queryDatabase(insertUserFeed, [newFeed[0].feed_id, user.user_id]);
+  return args.feedName;
+}
+
+//graphql mutation 4: add a new public feed
+export async function addNewPublicFeedName(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+  const readFeedId = `SELECT FEED_ID FROM FEED_NAME WHERE FEED_NAME = $1 and IS_PUBLIC = TRUE and CREATOR_ID != $2;`;
+  const publicFeed = await queryDatabase(readFeedId, [
+    args.feedName,
+    user.user_id,
+  ]);
+  const insertUserFeed = `INSERT INTO USER_FEEDS (FEED_ID, USER_ID) VALUES ($1, $2)`;
+  await queryDatabase(insertUserFeed, [publicFeed[0].feed_id, user.user_id]);
+  return args.feedName;
+}
+
+//graphql mutation 5: change status of feed (public/private)
+export async function changeFeedStatus(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+  const updateStatus = `UPDATE FEED_NAME SET IS_PUBLIC = NOT IS_PUBLIC WHERE FEED_NAME=$1 AND CREATOR_ID=$2 RETURNING *`;
+  const newStatus = await queryDatabase(updateStatus, [
+    args.feedName,
+    user.user_id,
+  ]);
+  return newStatus[0].is_public;
 }

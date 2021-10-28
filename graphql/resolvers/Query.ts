@@ -83,3 +83,47 @@ export async function feed(parent, args, context, info) {
     };
   }
 }
+
+//graphql query 4: retrieve an array of feed names ordered by most popular
+export async function getAllFeedNames(parent, args, context, info) {
+  const readAllFeedNames = `WITH T1 AS(
+    SELECT FN.FEED_NAME AS FEED_NAME, COUNT(*) AS COUNTED FROM USER_FEEDS UF JOIN FEED_NAME FN ON (FN.FEED_ID = UF.FEED_ID) WHERE FN.IS_PUBLIC = TRUE
+    GROUP BY FN.FEED_NAME)
+    SELECT FEED_NAME FROM T1
+    ORDER BY COUNTED DESC;`;
+  const feeds = await queryDatabase(readAllFeedNames, []);
+  return feeds.map((item) => item.feed_name);
+}
+
+//graphql query 5: retrieve all public feeds that a user is tracking
+export async function getPublicFeedNames(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+
+  const readAllFeedNames = `SELECT FEED_NAME FROM
+USER_FEEDS UF JOIN FEED_NAME FN ON (UF.FEED_ID = FN.FEED_ID)
+WHERE
+UF.USER_ID = $1
+AND FN.IS_PUBLIC = TRUE
+AND UF.USER_ID != FN.CREATOR_ID;`;
+  const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
+  return feeds.map((item) => item.feed_name);
+}
+
+//graphql query 6: retrieve all person user feeds
+export async function getUserFeedNames(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+
+  const readAllFeedNames = `SELECT FEED_NAME FROM FEED_NAME WHERE CREATOR_ID = $1;`;
+  const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
+  return feeds.map((item) => item.feed_name);
+}

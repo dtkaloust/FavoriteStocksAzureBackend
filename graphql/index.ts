@@ -1,6 +1,19 @@
 import { ApolloServer, gql } from "apollo-server-azure-functions";
-import { getPossibleTickers, priceCheck, feed } from "./resolvers/Query";
-import { addTickerToFeed, removeTickerFromFeed } from "./resolvers/Mutation";
+import {
+  getPossibleTickers,
+  priceCheck,
+  feed,
+  getAllFeedNames,
+  getPublicFeedNames,
+  getUserFeedNames,
+} from "./resolvers/Query";
+import {
+  addTickerToFeed,
+  removeTickerFromFeed,
+  addNewPrivateFeedName,
+  addNewPublicFeedName,
+  changeFeedStatus,
+} from "./resolvers/Mutation";
 import { user } from "./resolvers/Feed";
 import { verifyToken } from "./utils/verifyToken";
 import { authPayload } from "./TypeScriptInterfaces";
@@ -10,11 +23,17 @@ const typeDefs = gql`
     feed(feedName: String): Feed!
     priceCheck(tickerSymbol: String!): String
     getPossibleTickers: [String!]!
+    getAllFeedNames: [String!]!
+    getPublicFeedNames: [String!]!
+    getUserFeedNames: [String!]!
   }
 
   type Mutation {
     addTickerToFeed(tickerSymbol: String!, feedName: String!): Ticker!
     removeTickerFromFeed(tickerSymbol: String!, feedName: String!): Ticker!
+    addNewPrivateFeedName(feedName: String!): String
+    addNewPublicFeedName(feedName: String!): String
+    changeFeedStatus(feedName: String!): Boolean!
   }
   type Feed {
     id: ID
@@ -45,8 +64,21 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
-  Query: { getPossibleTickers, priceCheck, feed },
-  Mutation: { addTickerToFeed, removeTickerFromFeed },
+  Query: {
+    getPossibleTickers,
+    priceCheck,
+    feed,
+    getAllFeedNames,
+    getPublicFeedNames,
+    getUserFeedNames,
+  },
+  Mutation: {
+    addTickerToFeed,
+    removeTickerFromFeed,
+    addNewPrivateFeedName,
+    addNewPublicFeedName,
+    changeFeedStatus,
+  },
   Feed: { user },
 };
 
@@ -78,5 +110,7 @@ const server = new ApolloServer({
 export default server.createHandler({
   cors: {
     origin: "*",
+    credentials: true,
+    allowedHeaders: ["content-type", "authorization"],
   },
 });
