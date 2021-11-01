@@ -22,7 +22,7 @@ const getHomePageTickers = async () => {
 
 //function 2: retrieves the current feed's tickers
 const getCurrentFeedTickers = async (feedName) => {
-  const readCurrentFeedTickers = `SELECT FN.FEED_ID AS FEED_ID, TN.TICKER_ID AS ID, SYMBOL, COUNTRY, CURRENCY, LOGO, MARKET_CAP, NAME, URL
+  const readCurrentFeedTickers = `SELECT FN.FEED_ID AS FEED_ID, FN.FEED_NAME AS FEED_NAME, FN.IS_PUBLIC AS IS_PUBLIC, TN.TICKER_ID AS ID, SYMBOL, COUNTRY, CURRENCY, LOGO, MARKET_CAP, NAME, URL
   FROM FEED_NAME FN JOIN FEED_TICKERS FT ON (FN.FEED_ID = FT.FEED_ID)
   JOIN TICKER_NAME TN ON (TN.TICKER_ID = FT.TICKER_ID)
   WHERE FN.FEED_NAME = $1;`;
@@ -73,6 +73,8 @@ export async function feed(parent, args, context, info) {
     return {
       companies: homePageTickers,
       count: homePageTickers.length,
+      name: "",
+      is_public: true,
     };
   } else {
     const currentFeedTickers = await getCurrentFeedTickers(args.feedName);
@@ -80,6 +82,8 @@ export async function feed(parent, args, context, info) {
       id: currentFeedTickers[0].feed_id,
       companies: currentFeedTickers,
       count: currentFeedTickers.length,
+      name: currentFeedTickers[0].feed_name,
+      is_public: currentFeedTickers[0].is_public,
     };
   }
 }
@@ -123,7 +127,7 @@ export async function getUserFeedNames(parent, args, context, info) {
     user = await getOrCreateUser(context.auth.sub);
   }
 
-  const readAllFeedNames = `SELECT FEED_NAME FROM FEED_NAME WHERE CREATOR_ID = $1;`;
+  const readAllFeedNames = `SELECT FEED_NAME AS NAME, IS_PUBLIC, FEED_ID AS ID FROM FEED_NAME WHERE CREATOR_ID = $1;`;
   const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
-  return feeds.map((item) => item.feed_name);
+  return feeds;
 }

@@ -13,7 +13,6 @@ const loadCompanyData = async (symbol) => {
     `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${apiToken}`
   );
   const json = await response.json();
-  console.log(json);
   return json;
 };
 
@@ -27,7 +26,6 @@ const createOrGetTicker = async (symbol) => {
   if (!ticker[0]) {
     const companyData = loadCompanyData(symbol);
     return companyData.then(async (res: finhubProfileAPIResponse) => {
-      console.log(res);
       const newTicker = await queryDatabase(insertTickerQuery, [
         symbol,
         res.country,
@@ -153,7 +151,27 @@ export async function addNewPrivateFeedName(parent, args, context, info) {
     user.user_id,
   ]);
   await queryDatabase(insertUserFeed, [newFeed[0].feed_id, user.user_id]);
-  return args.feedName;
+  return { name: args.feedName, is_public: false };
+}
+
+export async function deletePrivateFeed(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+  const deleteFeedTickers = `DELETE FROM FEED_TICKERS WHERE FEED_ID = $1`;
+  const deleteFeedName = `DELETE FROM FEED_NAME WHERE FEED_ID = $1 AND CREATOR_ID = $2 RETURNING *`;
+  const deleteUserFeeds = `DELETE FROM USER_FEEDS WHERE FEED_ID = $1`;
+
+  await queryDatabase(deleteFeedTickers, [args.feedId]);
+  await queryDatabase(deleteUserFeeds, [args.feedId]);
+  const deletedQuery = await queryDatabase(deleteFeedName, [
+    args.feedId,
+    user.user_id,
+  ]);
+  return { id: args.feedId, name: deletedQuery[0].feed_name };
 }
 
 //graphql mutation 4: add a new public feed

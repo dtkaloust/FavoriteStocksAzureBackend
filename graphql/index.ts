@@ -13,6 +13,7 @@ import {
   addNewPrivateFeedName,
   addNewPublicFeedName,
   changeFeedStatus,
+  deletePrivateFeed,
 } from "./resolvers/Mutation";
 import { user } from "./resolvers/Feed";
 import { verifyToken } from "./utils/verifyToken";
@@ -25,13 +26,14 @@ const typeDefs = gql`
     getPossibleTickers: [String!]!
     getAllFeedNames: [String!]!
     getPublicFeedNames: [String!]!
-    getUserFeedNames: [String!]!
+    getUserFeedNames: [Feed!]!
   }
 
   type Mutation {
     addTickerToFeed(tickerSymbol: String!, feedName: String!): Ticker!
     removeTickerFromFeed(tickerSymbol: String!, feedName: String!): Ticker!
-    addNewPrivateFeedName(feedName: String!): String
+    deletePrivateFeed(feedId: Int!): Feed!
+    addNewPrivateFeedName(feedName: String!): Feed!
     addNewPublicFeedName(feedName: String!): String
     changeFeedStatus(feedName: String!): Boolean!
   }
@@ -40,6 +42,8 @@ const typeDefs = gql`
     companies: [Ticker!]!
     count: Int!
     user: User
+    is_public: Boolean!
+    name: String!
   }
 
   type Ticker {
@@ -78,6 +82,7 @@ const resolvers = {
     addNewPrivateFeedName,
     addNewPublicFeedName,
     changeFeedStatus,
+    deletePrivateFeed,
   },
   Feed: { user },
 };
