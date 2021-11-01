@@ -151,7 +151,7 @@ export async function addNewPrivateFeedName(parent, args, context, info) {
     user.user_id,
   ]);
   await queryDatabase(insertUserFeed, [newFeed[0].feed_id, user.user_id]);
-  return { name: args.feedName, is_public: false };
+  return { name: args.feedName, is_public: false, id: newFeed[0].feed_id };
 }
 
 export async function deletePrivateFeed(parent, args, context, info) {
@@ -174,6 +174,22 @@ export async function deletePrivateFeed(parent, args, context, info) {
   return { id: args.feedId, name: deletedQuery[0].feed_name };
 }
 
+export async function deletePublicFeed(parent, args, context, info) {
+  let user = null;
+
+  //get or create a user if we have authorization in our header
+  if (context.auth.sub) {
+    user = await getOrCreateUser(context.auth.sub);
+  }
+  const queryFeedName = `SELECT FEED_NAME AS NAME, FEED_ID AS ID FROM FEED_NAME WHERE FEED_ID = $1`;
+  const deleteUserFeeds = `DELETE FROM USER_FEEDS WHERE FEED_ID = $1 AND USER_ID=$2`;
+
+  const feedQueried = await queryDatabase(queryFeedName, [args.feedId]);
+  await queryDatabase(deleteUserFeeds, [args.feedId, user.user_id]);
+
+  return { id: args.feedId, name: feedQueried[0].name };
+}
+
 //graphql mutation 4: add a new public feed
 export async function addNewPublicFeedName(parent, args, context, info) {
   let user = null;
@@ -182,14 +198,14 @@ export async function addNewPublicFeedName(parent, args, context, info) {
   if (context.auth.sub) {
     user = await getOrCreateUser(context.auth.sub);
   }
-  const readFeedId = `SELECT FEED_ID FROM FEED_NAME WHERE FEED_NAME = $1 and IS_PUBLIC = TRUE and CREATOR_ID != $2;`;
+  const readFeedId = `SELECT FEED_ID AS ID, FEED_NAME AS NAME FROM FEED_NAME WHERE FEED_NAME = $1 and IS_PUBLIC = TRUE and CREATOR_ID != $2;`;
   const publicFeed = await queryDatabase(readFeedId, [
     args.feedName,
     user.user_id,
   ]);
   const insertUserFeed = `INSERT INTO USER_FEEDS (FEED_ID, USER_ID) VALUES ($1, $2)`;
-  await queryDatabase(insertUserFeed, [publicFeed[0].feed_id, user.user_id]);
-  return args.feedName;
+  await queryDatabase(insertUserFeed, [publicFeed[0].id, user.user_id]);
+  return publicFeed[0];
 }
 
 //graphql mutation 5: change status of feed (public/private)

@@ -14,6 +14,7 @@ import {
   addNewPublicFeedName,
   changeFeedStatus,
   deletePrivateFeed,
+  deletePublicFeed,
 } from "./resolvers/Mutation";
 import { user } from "./resolvers/Feed";
 import { verifyToken } from "./utils/verifyToken";
@@ -24,8 +25,8 @@ const typeDefs = gql`
     feed(feedName: String): Feed!
     priceCheck(tickerSymbol: String!): String
     getPossibleTickers: [String!]!
-    getAllFeedNames: [String!]!
-    getPublicFeedNames: [String!]!
+    getAllFeedNames: [Feed!]!
+    getPublicFeedNames: [Feed!]!
     getUserFeedNames: [Feed!]!
   }
 
@@ -33,8 +34,9 @@ const typeDefs = gql`
     addTickerToFeed(tickerSymbol: String!, feedName: String!): Ticker!
     removeTickerFromFeed(tickerSymbol: String!, feedName: String!): Ticker!
     deletePrivateFeed(feedId: Int!): Feed!
+    deletePublicFeed(feedId: Int!): Feed!
     addNewPrivateFeedName(feedName: String!): Feed!
-    addNewPublicFeedName(feedName: String!): String
+    addNewPublicFeedName(feedName: String!): Feed!
     changeFeedStatus(feedName: String!): Boolean!
   }
   type Feed {
@@ -83,6 +85,7 @@ const resolvers = {
     addNewPublicFeedName,
     changeFeedStatus,
     deletePrivateFeed,
+    deletePublicFeed,
   },
   Feed: { user },
 };
