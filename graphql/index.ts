@@ -37,7 +37,7 @@ const typeDefs = gql`
     deletePublicFeed(feedId: Int!): Feed!
     addNewPrivateFeedName(feedName: String!): Feed!
     addNewPublicFeedName(feedName: String!): Feed!
-    changeFeedStatus(feedName: String!): Boolean!
+    changeFeedStatus(feedName: String!): Feed!
   }
   type Feed {
     id: ID

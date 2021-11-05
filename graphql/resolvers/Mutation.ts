@@ -72,7 +72,7 @@ const deleteTickerFeedRel = async (feed_id, ticker_id) => {
 };
 
 //graphql mutation 1: Will add a ticker to a specific feed of a specific user
-export async function addTickerToFeed(parent, args, context, info) {
+export async function addTickerToFeed(parent, args, context) {
   //check if authenticated
   if (!context.auth.isAuthenticated) {
     throw new AuthenticationError("Not logged in");
@@ -104,7 +104,7 @@ export async function addTickerToFeed(parent, args, context, info) {
 }
 
 //graphql mutation 2: Will remove a ticker from a specific feed of a specific user
-export async function removeTickerFromFeed(parent, args, context, info) {
+export async function removeTickerFromFeed(parent, args, context) {
   //check if authenticated
   if (!context.auth.isAuthenticated) {
     throw new AuthenticationError("Not logged in");
@@ -136,7 +136,7 @@ export async function removeTickerFromFeed(parent, args, context, info) {
 }
 
 //graphql mutation 3: add a new private feed
-export async function addNewPrivateFeedName(parent, args, context, info) {
+export async function addNewPrivateFeedName(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -154,7 +154,7 @@ export async function addNewPrivateFeedName(parent, args, context, info) {
   return { name: args.feedName, is_public: false, id: newFeed[0].feed_id };
 }
 
-export async function deletePrivateFeed(parent, args, context, info) {
+export async function deletePrivateFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -174,7 +174,7 @@ export async function deletePrivateFeed(parent, args, context, info) {
   return { id: args.feedId, name: deletedQuery[0].feed_name };
 }
 
-export async function deletePublicFeed(parent, args, context, info) {
+export async function deletePublicFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -191,7 +191,7 @@ export async function deletePublicFeed(parent, args, context, info) {
 }
 
 //graphql mutation 4: add a new public feed
-export async function addNewPublicFeedName(parent, args, context, info) {
+export async function addNewPublicFeedName(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -209,7 +209,7 @@ export async function addNewPublicFeedName(parent, args, context, info) {
 }
 
 //graphql mutation 5: change status of feed (public/private)
-export async function changeFeedStatus(parent, args, context, info) {
+export async function changeFeedStatus(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -221,5 +221,9 @@ export async function changeFeedStatus(parent, args, context, info) {
     args.feedName,
     user.user_id,
   ]);
-  return newStatus[0].is_public;
+  return {
+    name: newStatus[0].feed_name,
+    id: newStatus[0].feed_id,
+    is_public: newStatus[0].is_public,
+  };
 }

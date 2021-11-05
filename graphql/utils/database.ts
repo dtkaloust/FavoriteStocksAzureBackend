@@ -18,11 +18,6 @@ const config = {
 const pool = new Pool(config);
 
 export async function queryDatabase(query, values) {
-  //const client = new Client(config);
-  //console.log(Date.now());
-  //await client.connect();
   const res = await pool.query(query, values);
-  //await client.end();
-  //console.log(Date.now());
   return res.rows;
 }

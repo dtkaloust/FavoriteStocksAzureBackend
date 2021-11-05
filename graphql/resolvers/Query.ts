@@ -31,7 +31,7 @@ const getCurrentFeedTickers = async (feedName) => {
 };
 
 //graphql query 1: retrieves a list of all possible tickers. Used for predictive search in the front end
-export async function getPossibleTickers(parent, args, context, info) {
+export async function getPossibleTickers(parent, args, context) {
   const apiToken = apiKey;
   if (!context.auth.sub) {
     return ["nothing"];
@@ -49,7 +49,7 @@ export async function getPossibleTickers(parent, args, context, info) {
 }
 
 //graphql query 2: retrieves current price details of a symbol
-export async function priceCheck(parent, args, context, info) {
+export async function priceCheck(parent, args) {
   const apiToken = apiKey;
   const response = await fetch(
     `https://finnhub.io/api/v1/quote?symbol=${args.tickerSymbol}&token=${apiToken}`
@@ -59,7 +59,7 @@ export async function priceCheck(parent, args, context, info) {
 }
 
 //graphql query 3: retrieves a specific feed
-export async function feed(parent, args, context, info) {
+export async function feed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -89,7 +89,7 @@ export async function feed(parent, args, context, info) {
 }
 
 //graphql query 4: retrieve an array of feed names ordered by most popular
-export async function getAllFeedNames(parent, args, context, info) {
+export async function getAllFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -106,7 +106,7 @@ export async function getAllFeedNames(parent, args, context, info) {
 }
 
 //graphql query 5: retrieve all public feeds that a user is tracking
-export async function getPublicFeedNames(parent, args, context, info) {
+export async function getPublicFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
@@ -125,7 +125,7 @@ AND UF.USER_ID != FN.CREATOR_ID;`;
 }
 
 //graphql query 6: retrieve all person user feeds
-export async function getUserFeedNames(parent, args, context, info) {
+export async function getUserFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
