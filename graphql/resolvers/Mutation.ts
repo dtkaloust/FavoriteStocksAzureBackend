@@ -1,4 +1,3 @@
-import { getOrCreateUser } from "../utils/userLogic";
 import { queryDatabase } from "../utils/database";
 import { AuthenticationError } from "apollo-server-azure-functions";
 import { finhubProfileAPIResponse } from "../TypeScriptInterfaces";
@@ -79,13 +78,13 @@ export async function addTickerToFeed(parent, args, context) {
   }
 
   //create user if first time, and get user's info
-  const user = await getOrCreateUser(context.auth.sub);
+  const user = context.auth.sub.split("|")[1];
 
   //create ticker if it is new or just get ticker id
   const ticker = await createOrGetTicker(args.tickerSymbol);
 
   //get feed id
-  const feed = await getFeed(user.user_id, args.feedName);
+  const feed = await getFeed(user, args.feedName);
 
   //add ticker and feed relationship
   await addTickerFeedRel(feed.feed_id, ticker.ticker_id);
@@ -111,10 +110,10 @@ export async function removeTickerFromFeed(parent, args, context) {
   }
 
   //get user's info
-  const user = await getOrCreateUser(context.auth.sub);
+  const user = context.auth.sub.split("|")[1];
 
   //get feed id for current user
-  const feed = await getFeed(user.user_id, args.feedName);
+  const feed = await getFeed(user, args.feedName);
 
   //get the ticker id
   const ticker = await createOrGetTicker(args.tickerSymbol);
@@ -141,25 +140,23 @@ export async function addNewPrivateFeedName(parent, args, context) {
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
 
   const insertFeedName = `INSERT INTO FEED_NAME (FEED_NAME, CREATOR_ID, IS_PUBLIC) VALUES ($1, $2, FALSE) RETURNING *`;
   const insertUserFeed = `INSERT INTO USER_FEEDS (FEED_ID, USER_ID) VALUES ($1, $2)`;
-  const newFeed = await queryDatabase(insertFeedName, [
-    args.feedName,
-    user.user_id,
-  ]);
-  await queryDatabase(insertUserFeed, [newFeed[0].feed_id, user.user_id]);
+  const newFeed = await queryDatabase(insertFeedName, [args.feedName, user]);
+  await queryDatabase(insertUserFeed, [newFeed[0].feed_id, user]);
   return { name: args.feedName, is_public: false, id: newFeed[0].feed_id };
 }
 
+//graphql mutation 4: delete a private/custom feed from a user
 export async function deletePrivateFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
   const deleteFeedTickers = `DELETE FROM FEED_TICKERS WHERE FEED_ID = $1`;
   const deleteFeedName = `DELETE FROM FEED_NAME WHERE FEED_ID = $1 AND CREATOR_ID = $2 RETURNING *`;
@@ -167,60 +164,52 @@ export async function deletePrivateFeed(parent, args, context) {
 
   await queryDatabase(deleteFeedTickers, [args.feedId]);
   await queryDatabase(deleteUserFeeds, [args.feedId]);
-  const deletedQuery = await queryDatabase(deleteFeedName, [
-    args.feedId,
-    user.user_id,
-  ]);
+  const deletedQuery = await queryDatabase(deleteFeedName, [args.feedId, user]);
   return { id: args.feedId, name: deletedQuery[0].feed_name };
 }
 
+//graphql mutation 5: delete a public feed from a user
 export async function deletePublicFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
   const queryFeedName = `SELECT FEED_NAME AS NAME, FEED_ID AS ID FROM FEED_NAME WHERE FEED_ID = $1`;
   const deleteUserFeeds = `DELETE FROM USER_FEEDS WHERE FEED_ID = $1 AND USER_ID=$2`;
 
   const feedQueried = await queryDatabase(queryFeedName, [args.feedId]);
-  await queryDatabase(deleteUserFeeds, [args.feedId, user.user_id]);
+  await queryDatabase(deleteUserFeeds, [args.feedId, user]);
 
   return { id: args.feedId, name: feedQueried[0].name };
 }
 
-//graphql mutation 4: add a new public feed
+//graphql mutation 6: add a new public feed
 export async function addNewPublicFeedName(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
   const readFeedId = `SELECT FEED_ID AS ID, FEED_NAME AS NAME FROM FEED_NAME WHERE FEED_NAME = $1 and IS_PUBLIC = TRUE and CREATOR_ID != $2;`;
-  const publicFeed = await queryDatabase(readFeedId, [
-    args.feedName,
-    user.user_id,
-  ]);
+  const publicFeed = await queryDatabase(readFeedId, [args.feedName, user]);
   const insertUserFeed = `INSERT INTO USER_FEEDS (FEED_ID, USER_ID) VALUES ($1, $2)`;
-  await queryDatabase(insertUserFeed, [publicFeed[0].id, user.user_id]);
+  await queryDatabase(insertUserFeed, [publicFeed[0].id, user]);
   return publicFeed[0];
 }
 
-//graphql mutation 5: change status of feed (public/private)
+//graphql mutation 7: change status of feed (public/private)
 export async function changeFeedStatus(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
   const updateStatus = `UPDATE FEED_NAME SET IS_PUBLIC = NOT IS_PUBLIC WHERE FEED_NAME=$1 AND CREATOR_ID=$2 RETURNING *`;
-  const newStatus = await queryDatabase(updateStatus, [
-    args.feedName,
-    user.user_id,
-  ]);
+  const newStatus = await queryDatabase(updateStatus, [args.feedName, user]);
   return {
     name: newStatus[0].feed_name,
     id: newStatus[0].feed_id,

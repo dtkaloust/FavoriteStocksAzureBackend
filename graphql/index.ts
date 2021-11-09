@@ -64,7 +64,6 @@ const typeDefs = gql`
   }
 
   type User {
-    id: ID!
     authSub: String!
   }
 `;

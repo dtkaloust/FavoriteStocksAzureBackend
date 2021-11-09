@@ -1,6 +1,5 @@
 require("dotenv").config();
 import { queryDatabase } from "../utils/database";
-import { getOrCreateUser } from "../utils/userLogic";
 import {
   finhubQuoteAPIResponse,
   finhubSymbolAPIResponse,
@@ -60,13 +59,6 @@ export async function priceCheck(parent, args) {
 
 //graphql query 3: retrieves a specific feed
 export async function feed(parent, args, context) {
-  let user = null;
-
-  //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
-  }
-
   //retrieve the feed. If it is the homepage feed then return default feed
   if (!args.feedName) {
     const homePageTickers = await getHomePageTickers();
@@ -94,14 +86,14 @@ export async function getAllFeedNames(parent, args, context) {
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
   const readAllFeedNames = `WITH T1 AS(
     SELECT FN.FEED_NAME AS NAME, FN.FEED_ID AS ID, COUNT(*) AS COUNTED FROM USER_FEEDS UF JOIN FEED_NAME FN ON (FN.FEED_ID = UF.FEED_ID) WHERE FN.IS_PUBLIC = TRUE AND FN.CREATOR_ID != $1
     GROUP BY FN.FEED_NAME, FN.FEED_ID)
     SELECT NAME, ID FROM T1
     ORDER BY COUNTED DESC;`;
-  const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
+  const feeds = await queryDatabase(readAllFeedNames, [user]);
   return feeds;
 }
 
@@ -111,7 +103,7 @@ export async function getPublicFeedNames(parent, args, context) {
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
 
   const readAllFeedNames = `SELECT FN.FEED_NAME AS NAME, FN.FEED_ID AS ID FROM
@@ -120,7 +112,7 @@ WHERE
 UF.USER_ID = $1
 AND FN.IS_PUBLIC = TRUE
 AND UF.USER_ID != FN.CREATOR_ID;`;
-  const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
+  const feeds = await queryDatabase(readAllFeedNames, [user]);
   return feeds;
 }
 
@@ -130,10 +122,10 @@ export async function getUserFeedNames(parent, args, context) {
 
   //get or create a user if we have authorization in our header
   if (context.auth.sub) {
-    user = await getOrCreateUser(context.auth.sub);
+    user = context.auth.sub.split("|")[1];
   }
 
   const readAllFeedNames = `SELECT FEED_NAME AS NAME, IS_PUBLIC, FEED_ID AS ID FROM FEED_NAME WHERE CREATOR_ID = $1;`;
-  const feeds = await queryDatabase(readAllFeedNames, [user.user_id]);
+  const feeds = await queryDatabase(readAllFeedNames, [user]);
   return feeds;
 }
