@@ -1,0 +1,64 @@
+psql --host=favoritestocktickers.postgres.database.azure.com --port=5432 --dbname=postgres --username=stockTickerApp@favoritestocktickers
+\c favoritestocktickers
+\dt
+
+ALTER TABLE feed ADD UNIQUE (feed_name);
+
+ALTER TABLE feed ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT 'false'
+
+UPDATE users SET email = 'dtkaloust@gmail.com' where user_id = 6;
+
+ALTER TABLE users ALTER COLUMN email SET NOT NULL;
+
+
+
+CREATE TABLE users (
+user_id serial PRIMARY KEY,
+auth_sub VARCHAR(128) UNIQUE NOT NULL);
+CREATE UNIQUE INDEX auth_sub_idx ON  users (auth_sub);
+
+
+
+CREATE TABLE user_feeds (
+user_id INT,
+feed_id INT,
+PRIMARY KEY(feed_id, user_id),
+CONSTRAINT fk_feed
+	FOREIGN KEY(feed_id)
+		REFERENCES feed(feed_id)
+);
+
+
+CREATE TABLE feed_name (
+feed_id serial PRIMARY KEY,
+feed_name VARCHAR(128) UNIQUE NOT NULL,
+creator_id INT NOT NULL,
+is_public BOOLEAN NOT NULL DEFAULT 'false',
+UNIQUE(creator_id, feed_name)
+);
+CREATE UNIQUE INDEX feed_name_idx ON feed_name(feed_name);
+
+
+CREATE TABLE ticker_name (
+ticker_id serial PRIMARY KEY,
+symbol VARCHAR(16) UNIQUE NOT NULL,
+country VARCHAR(128),
+currency VARCHAR(64),
+logo VARCHAR(256),
+market_cap VARCHAR(64),
+name VARCHAR(128),
+url VARCHAR(256));
+CREATE UNIQUE INDEX symbol_idx ON ticker_name(symbol);
+
+
+CREATE TABLE feed_tickers (
+ticker_id INT,
+feed_id INT,
+PRIMARY KEY (ticker_id, feed_id),
+CONSTRAINT fk_ticker 
+	FOREIGN KEY(ticker_id)
+		REFERENCES ticker(ticker_id),
+CONSTRAINT fk_feed 
+	FOREIGN KEY(feed_id)
+		REFERENCES feed(feed_id)
+);
