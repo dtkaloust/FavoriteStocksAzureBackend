@@ -15,6 +15,7 @@ import {
   changeFeedStatus,
   deletePrivateFeed,
   deletePublicFeed,
+  addTickersToDB,
 } from "./resolvers/Mutation";
 import { user } from "./resolvers/Feed";
 import { verifyToken } from "./utils/verifyToken";
@@ -38,6 +39,7 @@ const typeDefs = gql`
     addNewPrivateFeedName(feedName: String!): Feed!
     addNewPublicFeedName(feedName: String!): Feed!
     changeFeedStatus(feedName: String!): Feed!
+    addTickersToDB(tickerList: [String!]!): [Ticker!]!
   }
   type Feed {
     id: ID
@@ -85,6 +87,7 @@ const resolvers = {
     changeFeedStatus,
     deletePrivateFeed,
     deletePublicFeed,
+    addTickersToDB,
   },
   Feed: { user },
 };

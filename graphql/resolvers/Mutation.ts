@@ -216,3 +216,12 @@ export async function changeFeedStatus(parent, args, context) {
     is_public: newStatus[0].is_public,
   };
 }
+
+//graphql mutation 8: add list of ticker symbols to ticker name database
+export async function addTickersToDB(parent, args, context) {
+  const newTickers = args.tickerList.map((symbol) => {
+    return createOrGetTicker(symbol);
+  });
+
+  return newTickers;
+}
