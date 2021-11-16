@@ -78,7 +78,7 @@ export async function addTickerToFeed(parent, args, context) {
   }
 
   //create user if first time, and get user's info
-  const user = context.auth.sub.split("|")[1];
+  const user = context.auth.payload.sub;
 
   //create ticker if it is new or just get ticker id
   const ticker = await createOrGetTicker(args.tickerSymbol);
@@ -110,7 +110,7 @@ export async function removeTickerFromFeed(parent, args, context) {
   }
 
   //get user's info
-  const user = context.auth.sub.split("|")[1];
+  const user = context.auth.payload.sub;
 
   //get feed id for current user
   const feed = await getFeed(user, args.feedName);
@@ -139,8 +139,8 @@ export async function addNewPrivateFeedName(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
 
   const insertFeedName = `INSERT INTO FEED_NAME (FEED_NAME, CREATOR_ID, IS_PUBLIC) VALUES ($1, $2, FALSE) RETURNING *`;
@@ -155,8 +155,8 @@ export async function deletePrivateFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
   const deleteFeedTickers = `DELETE FROM FEED_TICKERS WHERE FEED_ID = $1`;
   const deleteFeedName = `DELETE FROM FEED_NAME WHERE FEED_ID = $1 AND CREATOR_ID = $2 RETURNING *`;
@@ -173,8 +173,8 @@ export async function deletePublicFeed(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
   const queryFeedName = `SELECT FEED_NAME AS NAME, FEED_ID AS ID FROM FEED_NAME WHERE FEED_ID = $1`;
   const deleteUserFeeds = `DELETE FROM USER_FEEDS WHERE FEED_ID = $1 AND USER_ID=$2`;
@@ -190,8 +190,8 @@ export async function addNewPublicFeedName(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
   const readFeedId = `SELECT FEED_ID AS ID, FEED_NAME AS NAME FROM FEED_NAME WHERE FEED_NAME = $1 and IS_PUBLIC = TRUE and CREATOR_ID != $2;`;
   const publicFeed = await queryDatabase(readFeedId, [args.feedName, user]);
@@ -205,8 +205,8 @@ export async function changeFeedStatus(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
   const updateStatus = `UPDATE FEED_NAME SET IS_PUBLIC = NOT IS_PUBLIC WHERE FEED_NAME=$1 AND CREATOR_ID=$2 RETURNING *`;
   const newStatus = await queryDatabase(updateStatus, [args.feedName, user]);

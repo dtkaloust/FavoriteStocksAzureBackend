@@ -1,39 +1,40 @@
-import jwt from "jsonwebtoken";
-import jwksClient from "jwks-rsa";
-require("dotenv").config();
-const auth0Domain = process.env.AUTH0_DOMAIN;
-const auth0Audience = process.env.AUDIENCE;
+import passport from "passport";
 
-export const verifyToken = async (bearerToken) => {
-  const client = jwksClient({
-    jwksUri: `https://${auth0Domain}/.well-known/jwks.json`,
-  });
+import { config } from "./config";
 
-  function getJwksClientKey(header, callback) {
-    client.getSigningKey(
-      header.kid,
-      function (error, key: jwksClient.SigningKey) {
-        const signingKey =
-          (key as jwksClient.CertSigningKey).publicKey ||
-          (key as jwksClient.RsaSigningKey).rsaPublicKey;
-        callback(null, signingKey);
-      }
-    );
-  }
+import OIDCBearerStrategy from "passport-azure-ad";
+import { authPayload } from "../TypeScriptInterfaces";
 
-  return new Promise((resolve, reject) => {
-    jwt.verify(
-      bearerToken,
-      getJwksClientKey,
-      {
-        audience: auth0Audience,
-        issuer: `https://${auth0Domain}/`,
-        algorithms: ["RS256"],
-      },
-      function (err, decoded) {
-        if (err) reject(err);
-        resolve(decoded);
-      }
-    );
-  });
+const options = {
+  identityMetadata: `https://${config.metadata.b2cDomain}/${config.credentials.tenantName}/${config.policies.policyName}/${config.metadata.version}/${config.metadata.discovery}`,
+  clientID: config.credentials.clientID,
+  audience: config.credentials.clientID,
+  policyName: config.policies.policyName,
+  isB2C: config.settings.isB2C,
+  validateIssuer: config.settings.validateIssuer,
+  loggingLevel: config.settings.loggingLevel,
+  passReqToCallback: config.settings.passReqToCallback,
+  scope: config.protectedRoutes.apiGraphql.scopes,
 };
+
+const bearerStrategy = new OIDCBearerStrategy.BearerStrategy(
+  options,
+  (token, done) => {
+    if (!token.scp.includes("demo.read")) {
+      return done(null, false, {
+        message: "User not authorized to access resource",
+      });
+    }
+    return done(null, token);
+  }
+);
+
+passport.use("oauth-bearer", bearerStrategy);
+
+export const authOauthBearer = ({ req, res }) =>
+  new Promise<authPayload>((resolve, reject) => {
+    passport.authenticate("oauth-bearer", (authErr, authUser, authInfo) => {
+      if (!authUser) reject(authErr || authInfo);
+      else resolve(authUser);
+    })(req, res);
+  });

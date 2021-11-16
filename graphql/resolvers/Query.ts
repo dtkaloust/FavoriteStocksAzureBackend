@@ -32,7 +32,7 @@ const getCurrentFeedTickers = async (feedName) => {
 //graphql query 1: retrieves a list of all possible tickers. Used for predictive search in the front end
 export async function getPossibleTickers(parent, args, context) {
   const apiToken = apiKey;
-  if (!context.auth.sub) {
+  if (!context.auth.payload.sub) {
     return ["nothing"];
   }
 
@@ -85,8 +85,8 @@ export async function getAllFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
   const readAllFeedNames = `WITH T1 AS(
     SELECT FN.FEED_NAME AS NAME, FN.FEED_ID AS ID, COUNT(*) AS COUNTED FROM USER_FEEDS UF JOIN FEED_NAME FN ON (FN.FEED_ID = UF.FEED_ID) WHERE FN.IS_PUBLIC = TRUE AND FN.CREATOR_ID != $1
@@ -102,8 +102,8 @@ export async function getPublicFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
 
   const readAllFeedNames = `SELECT FN.FEED_NAME AS NAME, FN.FEED_ID AS ID FROM
@@ -121,8 +121,8 @@ export async function getUserFeedNames(parent, args, context) {
   let user = null;
 
   //get or create a user if we have authorization in our header
-  if (context.auth.sub) {
-    user = context.auth.sub.split("|")[1];
+  if (context.auth.payload.sub) {
+    user = context.auth.payload.sub;
   }
 
   const readAllFeedNames = `SELECT FEED_NAME AS NAME, IS_PUBLIC, FEED_ID AS ID FROM FEED_NAME WHERE CREATOR_ID = $1;`;

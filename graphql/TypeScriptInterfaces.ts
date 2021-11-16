@@ -37,10 +37,15 @@ export interface finhubProfileAPIResponse {
 
 export interface authPayload {
   iss: string;
+  exp: string;
+  nbf: string;
   sub: string;
-  aud: string[];
-  iat: Int32;
-  exp: Int32;
+  aud: string;
+  given_name: string;
+  tfp: string;
+  nonce: string;
+  scp: string;
+  iat: string;
   azp: string;
-  scope: string;
+  ver: string;
 }

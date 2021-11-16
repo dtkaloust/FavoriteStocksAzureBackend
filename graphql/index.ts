@@ -18,7 +18,7 @@ import {
   addTickersToDB,
 } from "./resolvers/Mutation";
 import { user } from "./resolvers/Feed";
-import { verifyToken } from "./utils/verifyToken";
+import { authOauthBearer } from "./utils/verifyToken";
 import { authPayload } from "./TypeScriptInterfaces";
 
 const typeDefs = gql`
@@ -95,32 +95,33 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: async (req) => {
+  context: async (context) => {
     let isAuthenticated = false;
-    let sub = "";
+    let payload: authPayload;
     try {
-      const authHeader = req.request.headers.authorization || "";
-      if (authHeader) {
-        const token = authHeader.split(" ")[1];
-        const payload = (await verifyToken(token)) as authPayload;
-        isAuthenticated = payload && payload.sub ? true : false;
-        sub = payload.sub;
-      }
+      payload = (await authOauthBearer(context.context)) as authPayload;
+      isAuthenticated = payload && payload.sub ? true : false;
     } catch (error) {
-      console.error(error);
+      // you may want to escalate the auth issue to the client so you can just throw:
+      // throw error;
+
+      // or you can store the auth error in the context
+      context.authError = error;
     }
-    return {
-      req,
-      auth: { isAuthenticated, sub },
-    };
+
+    return { ...context, auth: { isAuthenticated, payload } };
   },
   debug: true,
 });
 
 export default server.createHandler({
   cors: {
-    origin: "*",
+    origin: "http://localhost:1234",
     credentials: true,
-    allowedHeaders: ["content-type", "authorization"],
+    allowedHeaders: [
+      "content-type",
+      "authorization",
+      "access-control-allow-origin",
+    ],
   },
 });
